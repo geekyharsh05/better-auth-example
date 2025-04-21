@@ -36,9 +36,7 @@ export default function SignIn() {
     },
   });
 
-  const handleCredentialsSignIn = async (
-    values: z.infer<typeof signInSchema>
-  ) => {
+  const handleCredentialsSignIn = (values: z.infer<typeof signInSchema>) => {
     setPendingCredentials(true);
 
     toast.promise(
@@ -68,36 +66,25 @@ export default function SignIn() {
 
     setPendingCredentials(false);
   };
-
   const handleSignInWithGithub = async () => {
     setPendingGithub(true);
 
     toast.promise(
-      authClient.signIn.social(
-        {
-          provider: "github",
-        },
-        {
-          onRequest: () => setPendingGithub(true),
-          onSuccess: async () => {
-            router.push("/");
-            router.refresh();
-          },
-          onError: (ctx: ErrorContext) => {
-            console.error(ctx);
-            throw new Error(ctx.error.message ?? "Something went wrong.");
-          },
-        }
-      ),
+      authClient.signIn.social({
+        provider: "github",
+        callbackURL: "/",
+        errorCallbackURL: "/signin",
+      }),
       {
-        loading: "Signing in with GitHub...",
+        loading: "Connecting to GitHub...",
         success: "Successfully signed in with GitHub!",
-        error: (err) =>
-          err.message ?? "GitHub sign-in failed. Please try again.",
+        error: (error: Error) => {
+          console.error(error);
+          setPendingGithub(false);
+          return error.message || "GitHub sign-in failed. Please try again.";
+        },
       }
     );
-
-    setPendingGithub(false);
   };
 
   return (
